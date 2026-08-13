@@ -237,7 +237,7 @@ canvas{display:block;width:100vw;height:100vh}
   <div id="bossIntroBox">
     <h2 id="bossIntroName">Boss fight!</h2>
     <p id="bossIntroDesc"></p>
-    <button id="bossStartBtn">FIGHT HUMUNGUS</button>
+    <button id="bossStartBtn">START BOSS FIGHT</button>
   </div>
 </div>
 <div id="victoryScreen">
@@ -1689,6 +1689,7 @@ function showBossIntro(name){
   const profile=bossProfile(name);
   document.getElementById("bossIntroName").textContent="Boss fight against "+profile.name+"!";
   document.getElementById("bossIntroDesc").textContent=profile.description;
+  document.getElementById("bossStartBtn").textContent="FIGHT "+profile.name;
   document.getElementById("bossIntro").style.display="flex";
 }
 

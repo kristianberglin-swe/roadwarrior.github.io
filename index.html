@@ -487,10 +487,10 @@ function openSingleplayer(){
   gameMode="singleplayer";
   document.getElementById("modeScreen").style.display="none";
   document.getElementById("onlineLobby").style.display="none";
-  document.getElementById("menu").style.display="none";
-  splashPrimed=false;
-  document.getElementById("splashHint").textContent="KLICKA FÖR ATT FORTSÄTTA";
-  document.getElementById("splash").style.display="flex";
+  // Intro-/klickskärmen används inte längre. Gå direkt till loadout-menyn.
+  const splash=document.getElementById("splash");
+  if(splash)splash.style.display="none";
+  document.getElementById("menu").style.display="flex";
   document.getElementById("scoreHud").style.display="block";
   document.getElementById("leaderboardPanel").style.display="block";
 }

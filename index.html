@@ -9,7 +9,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#1a140d;fon
 canvas{display:block;width:100vw;height:100vh}
 #info{position:fixed;left:12px;top:12px;z-index:10;color:#fff;background:#0009;padding:10px 13px;border-radius:9px;font-size:13px}
 #reset{position:fixed;right:14px;top:14px;z-index:20;background:#c62828;color:#fff;border:2px solid #fff;border-radius:10px;padding:11px 17px;font-weight:bold;font-size:16px;cursor:pointer}
-#menu{position:fixed;inset:0;z-index:30;background:#000d;display:flex;align-items:center;justify-content:center;color:#fff}
+#menu{position:fixed;inset:0;z-index:30;background:#000d;display:none;align-items:center;justify-content:center;color:#fff}
 #panel{width:min(800px,92vw);background:#211a14;border:3px solid #ddd;border-radius:16px;padding:24px;text-align:center}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:10px 0 22px}
 .choice{border:3px solid #555;background:#33291f;border-radius:12px;padding:12px;cursor:pointer;transition:.15s}
@@ -194,7 +194,7 @@ canvas{display:block;width:100vw;height:100vh}
 
 /* ===== GAME MODE / ONLINE LOBBY ===== */
 #modeScreen,#onlineLobby{
-  position:fixed;inset:0;z-index:64;display:none;align-items:center;justify-content:center;
+  position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;
   background:radial-gradient(circle at center,rgba(70,35,10,.55),rgba(0,0,0,.95));
   color:#fff;text-align:center;
 }
@@ -404,6 +404,11 @@ const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 function resize(){canvas.width=innerWidth;canvas.height=innerHeight}
 resize();
+// Explicit startup state: tag screen first, never the legacy singleplayer menu.
+document.getElementById("menu").style.display="none";
+document.getElementById("splash").style.display="none";
+document.getElementById("modeScreen").style.display="none";
+document.getElementById("onlineLobby").style.display="none";
 
 const tagInput=document.getElementById("playerTag");
 tagInput.addEventListener("input",()=>{
@@ -423,17 +428,20 @@ document.getElementById("tagStart").onclick=async()=>{
   playerTagValue=tag;
   localStorage.setItem("roadWarriorsTag",tag);
 
-  // Register player immediately in the online leaderboard with 0 points.
-  currentLeaderboardId=null;
-  await createOnlinePlayerEntry();
-
+  // Show game-mode selection immediately. Leaderboard registration must never block navigation.
   document.getElementById("tagScreen").style.display="none";
+  document.getElementById("menu").style.display="none";
+  document.getElementById("splash").style.display="none";
+  document.getElementById("onlineLobby").style.display="none";
   document.getElementById("modePlayerName").textContent=tag;
   document.getElementById("lobbyPlayerName").textContent=tag;
   {const _llt=document.getElementById("localLobbyTag");if(_llt)_llt.textContent=tag;}
   document.getElementById("modeScreen").style.display="flex";
   updateScoreHud();
   renderLeaderboard();
+
+  currentLeaderboardId=null;
+  Promise.resolve(createOnlinePlayerEntry()).catch(err=>console.warn("Leaderboard registration failed:",err));
 };
 
 let gameMode=null;
@@ -442,6 +450,9 @@ function openSingleplayer(){
   gameMode="singleplayer";
   document.getElementById("modeScreen").style.display="none";
   document.getElementById("onlineLobby").style.display="none";
+  document.getElementById("menu").style.display="none";
+  splashPrimed=false;
+  document.getElementById("splashHint").textContent="KLICKA FÖR ATT FORTSÄTTA";
   document.getElementById("splash").style.display="flex";
   document.getElementById("scoreHud").style.display="block";
   document.getElementById("leaderboardPanel").style.display="block";
@@ -481,6 +492,7 @@ document.getElementById("splash").onclick=()=>{
   introMusicEl.pause();
   introMusicEl.currentTime=0;
   document.getElementById("splash").style.display="none";
+  if(gameMode==="singleplayer") document.getElementById("menu").style.display="flex";
 };
 
 const keys={};

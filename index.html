@@ -233,6 +233,25 @@ canvas{display:block;width:100vw;height:100vh}
 @media(max-width:650px){.modeChoices{grid-template-columns:1fr}.modeBtn{min-height:110px}.modeBox h2{font-size:34px}}
 
 
+
+/* ===== DAILY MULTIPLAYER WINS ===== */
+#dailyWinsPanel{
+  position:absolute;right:18px;top:18px;z-index:4;width:min(250px,30vw);
+  padding:11px 13px;border:1px solid rgba(220,174,100,.72);border-radius:9px;
+  background:rgba(10,7,5,.74);box-shadow:0 8px 22px rgba(0,0,0,.42);
+  backdrop-filter:blur(4px);text-align:left;color:#f7dfb0;pointer-events:auto;
+}
+#dailyWinsPanel h3{margin:0 0 7px;text-align:center;font-size:15px;letter-spacing:1px;color:#f0c978}
+#dailyWinsList{font-size:13px;line-height:1.45}
+.dailyWinRow{display:flex;justify-content:space-between;gap:10px;padding:3px 2px;border-bottom:1px solid rgba(255,255,255,.07)}
+.dailyWinRow:last-child{border-bottom:0}
+.dailyWinRank{width:20px;color:#cbb58e}
+.dailyWinTag{flex:1;font-weight:900;letter-spacing:.6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dailyWinCount{font-weight:900;color:#ffe09b}
+#dailyWinsStatus{text-align:center;color:#bfae94;font-size:11px;padding:4px 0}
+@media(max-width:900px){#dailyWinsPanel{right:8px;top:8px;width:210px;transform:scale(.9);transform-origin:top right}}
+@media(max-width:650px){#dailyWinsPanel{position:absolute;left:50%;right:auto;top:auto;bottom:8px;width:240px;transform:translateX(-50%) scale(.88);transform-origin:bottom center}}
+
 /* ===== SIMPLIFIED LOGIN ===== */
 #tagScreen{
   background:#090704;
@@ -413,6 +432,10 @@ canvas{display:block;width:100vw;height:100vh}
       </button>
     </div>
   </div>
+  <div id="dailyWinsPanel">
+    <h3>DAGENS ONLINE-VINSTER</h3>
+    <div id="dailyWinsList"><div id="dailyWinsStatus">Laddar...</div></div>
+  </div>
 </div>
 
 <div id="onlineMatchHud">ONLINE BATTLE</div>
@@ -476,6 +499,7 @@ document.getElementById("tagStart").onclick=async()=>{
   document.getElementById("modeScreen").style.display="flex";
   updateScoreHud();
   renderLeaderboard();
+  fetchDailyWins();
 
   currentLeaderboardId=null;
   Promise.resolve(createOnlinePlayerEntry()).catch(err=>console.warn("Leaderboard registration failed:",err));
@@ -675,6 +699,7 @@ let onlineMatchStarted=false;
 let onlineStateTimer=0;
 let remoteCars=new Map();
 let onlineResultShown=false;
+let onlineWinSavedForMatch=null;
 const onlineColors=["#2196f3","#e53935","#ff9800","#9c27b0"];
 
 function ensureRealtimeClient(){
@@ -772,7 +797,7 @@ document.getElementById("onlineStartBtn").onclick=async()=>{
 function handleOnlineMatchStart(payload){
   if(!payload||!Array.isArray(payload.players)||!payload.players.some(p=>p.id===onlineClientId))return;
   if(onlineMatchStarted)return;
-  onlineMatchId=payload.matchId;onlineParticipants=payload.players;onlineMatchStarted=true;onlineResultShown=false;
+  onlineMatchId=payload.matchId;onlineParticipants=payload.players;onlineMatchStarted=true;onlineResultShown=false;onlineWinSavedForMatch=null;
   if(onlineChannel)onlineChannel.track({id:onlineClientId,tag:playerTagValue,joinedAt:onlineJoinedAt,status:"playing",matchId:onlineMatchId}).catch(()=>{});
   startOnlineMatch(payload);
 }
@@ -857,10 +882,78 @@ function onlineHud(){
     ctx.fillStyle="rgba(0,0,0,.72)";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign="center";ctx.font="bold 58px Arial";ctx.fillStyle="#ff4d3d";ctx.fillText("DU ÄR UTSLAGEN",canvas.width/2,canvas.height/2);ctx.font="bold 20px Arial";ctx.fillStyle="#fff";ctx.fillText("Matchen fortsätter",canvas.width/2,canvas.height/2+42);
   }
   if(!player.dead&&remoteCars.size>0&&[...remoteCars.values()].every(c=>c.dead)&&!onlineResultShown){
-    onlineResultShown=true;started=false;const v=document.getElementById("victoryScreen");const t=v.querySelector(".victoryText");if(t)t.textContent="DU VANN ONLINE!";v.style.display="flex";setTimeout(()=>{v.onclick=()=>location.reload();},400);
+    onlineResultShown=true;started=false;saveMultiplayerWin(onlineMatchId,playerTagValue);const v=document.getElementById("victoryScreen");const t=v.querySelector(".victoryText");if(t)t.textContent="DU VANN ONLINE!";v.style.display="flex";setTimeout(()=>{v.onclick=()=>location.reload();},400);
   }
 }
 
+
+function localDateKey(d=new Date()){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,"0");
+  const day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+async function saveMultiplayerWin(matchId,winnerTag){
+  if(!matchId||!winnerTag||!SUPABASE_URL||!SUPABASE_ANON_KEY)return false;
+  if(onlineWinSavedForMatch===matchId)return true;
+  try{
+    const res=await fetch(SUPABASE_URL+"/rest/v1/multiplayer_wins?on_conflict=match_id",{
+      method:"POST",
+      headers:{
+        "apikey":SUPABASE_ANON_KEY,
+        "Authorization":"Bearer "+SUPABASE_ANON_KEY,
+        "Content-Type":"application/json",
+        "Prefer":"resolution=ignore-duplicates,return=minimal"
+      },
+      body:JSON.stringify({match_id:matchId,winner_tag:sanitizeTag(winnerTag),win_date:localDateKey()})
+    });
+    if(!res.ok){
+      const text=await res.text();
+      console.warn("Daily multiplayer win save failed:",res.status,text);
+      window.lastMultiplayerWinError="POST "+res.status+": "+text;
+      return false;
+    }
+    onlineWinSavedForMatch=matchId;
+    window.lastMultiplayerWinError="";
+    fetchDailyWins();
+    return true;
+  }catch(e){
+    console.warn("Daily multiplayer win save error:",e);
+    window.lastMultiplayerWinError=e.message;
+    return false;
+  }
+}
+async function fetchDailyWins(){
+  const list=document.getElementById("dailyWinsList");
+  if(!list)return;
+  list.innerHTML='<div id="dailyWinsStatus">Laddar...</div>';
+  if(!SUPABASE_URL||!SUPABASE_ANON_KEY){list.innerHTML='<div id="dailyWinsStatus">Topplista ej ansluten</div>';return;}
+  try{
+    const date=localDateKey();
+    const url=SUPABASE_URL+"/rest/v1/multiplayer_wins?select=winner_tag,win_date&win_date=eq."+encodeURIComponent(date)+"&limit=1000";
+    const res=await fetch(url,{headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+SUPABASE_ANON_KEY,"Accept":"application/json"},cache:"no-store"});
+    const text=await res.text();
+    if(!res.ok){
+      console.warn("Daily wins load failed:",res.status,text);
+      list.innerHTML='<div id="dailyWinsStatus">Skapa tabellen i Supabase</div>';
+      return;
+    }
+    const rows=JSON.parse(text);
+    const counts=new Map();
+    (Array.isArray(rows)?rows:[]).forEach(r=>{
+      const tag=sanitizeTag(r.winner_tag||"")||"PLAYER";
+      counts.set(tag,(counts.get(tag)||0)+1);
+    });
+    const ranked=[...counts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,5);
+    if(!ranked.length){list.innerHTML='<div id="dailyWinsStatus">Inga onlinevinster idag ännu</div>';return;}
+    list.innerHTML=ranked.map(([tag,wins],i)=>
+      '<div class="dailyWinRow"><span class="dailyWinRank">'+(i+1)+'.</span><span class="dailyWinTag">'+tag+'</span><span class="dailyWinCount">'+wins+' '+(wins===1?'VINST':'VINSTER')+'</span></div>'
+    ).join("");
+  }catch(e){
+    console.warn("Daily wins error:",e);
+    list.innerHTML='<div id="dailyWinsStatus">Kunde inte ladda topplistan</div>';
+  }
+}
 
 function sanitizeTag(v){
   return (v||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,10);

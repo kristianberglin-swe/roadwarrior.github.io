@@ -191,6 +191,47 @@ canvas{display:block;width:100vw;height:100vh}
 #leaderboardList .tag{font-weight:bold;letter-spacing:1px}
 #leaderboardList .score{font-weight:bold;color:#f1ca83}
 
+
+/* ===== GAME MODE / ONLINE LOBBY ===== */
+#modeScreen,#onlineLobby{
+  position:fixed;inset:0;z-index:64;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(circle at center,rgba(70,35,10,.55),rgba(0,0,0,.95));
+  color:#fff;text-align:center;
+}
+.modeBox{
+  width:min(680px,92vw);padding:30px;border:3px solid #b78a47;border-radius:14px;
+  background:linear-gradient(145deg,#24170e,#0e0a07);box-shadow:0 0 45px #000;
+}
+.modeBox h2{margin:0 0 8px;color:#e7c27d;font-size:42px;letter-spacing:2px}
+.modeBox .playerName{color:#ffe2a4;font-weight:900;letter-spacing:2px;margin-bottom:22px}
+.modeChoices{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+.modeBtn{
+  min-height:150px;border:3px solid #695238;border-radius:12px;background:#211a14;color:#fff;
+  padding:20px 15px;cursor:pointer;font-weight:900;font-size:24px;transition:.15s;
+}
+.modeBtn:hover{transform:translateY(-2px);border-color:#d5aa67;background:#302217}
+.modeBtn span{display:block;margin-top:9px;font-size:13px;font-weight:normal;color:#d7c5a8;line-height:1.45}
+#onlineModeBtn{border-color:#9a3c2e;background:linear-gradient(145deg,#35150f,#21110d)}
+#onlineModeBtn:hover{border-color:#e35a44}
+#singleModeBtn{border-color:#47724d;background:linear-gradient(145deg,#18301d,#111d14)}
+#singleModeBtn:hover{border-color:#70bb7b}
+#onlineLobbyStatus{margin:18px 0;padding:14px;border:1px solid #765b37;border-radius:8px;background:#0006;color:#f1d4b5}
+#onlinePlayers{margin:18px 0;text-align:left}
+.onlinePlayer{display:flex;justify-content:space-between;padding:10px 12px;margin:7px 0;border-radius:7px;background:#ffffff0b;border:1px solid #ffffff18}
+.onlineReady{color:#69db7c;font-weight:bold}
+.onlineWaiting{color:#f0bd6b;font-weight:bold}
+.lobbyActions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+.lobbyBtn{padding:12px 20px;border:2px solid #ddd;border-radius:8px;background:#3b3025;color:#fff;font-weight:bold;cursor:pointer}
+.lobbyBtn:hover{background:#514234}
+#onlineStartBtn{background:#666;color:#bbb;cursor:not-allowed}
+#onlineStartBtn.ready{background:#9a261a;color:#fff;cursor:pointer}
+#onlineLoadout{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+#onlineLoadout label{font-size:12px;color:#d8c5a6;text-align:left}
+#onlineLoadout select{width:100%;margin-top:5px;background:#15100c;color:#f7dfb0;border:1px solid #7f6138;border-radius:7px;padding:9px;font-weight:bold}
+#onlineHint{font-size:12px;color:#cdbb9e;line-height:1.45}
+#onlineMatchHud{position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:18;display:none;background:#000b;border:2px solid #9f7a3d;color:#ffe0a0;padding:8px 14px;border-radius:8px;font-weight:bold;letter-spacing:.7px}
+@media(max-width:650px){.modeChoices{grid-template-columns:1fr}.modeBtn{min-height:110px}.modeBox h2{font-size:34px}}
+
 </style>
 </head>
 <body>
@@ -237,7 +278,7 @@ canvas{display:block;width:100vw;height:100vh}
   <div id="bossIntroBox">
     <h2 id="bossIntroName">Boss fight!</h2>
     <p id="bossIntroDesc"></p>
-    <button id="bossStartBtn">START BOSS FIGHT</button>
+    <button id="bossStartBtn">FIGHT HUMUNGUS</button>
   </div>
 </div>
 <div id="victoryScreen">
@@ -320,6 +361,44 @@ canvas{display:block;width:100vw;height:100vh}
 </div>
 </div>
 
+
+<div id="modeScreen">
+  <div class="modeBox">
+    <h2>ROAD WARRIORS</h2>
+    <div class="playerName" id="modePlayerName"></div>
+    <div>VÄLJ SPELLÄGE</div>
+    <div class="modeChoices">
+      <button class="modeBtn" id="onlineModeBtn">ONLINE BATTLE
+        <span>Möt andra spelare online. Lobby för 2–4 spelare.</span>
+      </button>
+      <button class="modeBtn" id="singleModeBtn">SINGLEPLAYER
+        <span>Nuvarande Road Warriors mot botar, levels och bossar.</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="onlineMatchHud">ONLINE BATTLE</div>
+
+<div id="onlineLobby">
+  <div class="modeBox">
+    <h2>ONLINE BATTLE</h2>
+    <div class="playerName" id="lobbyPlayerName"></div>
+    <div id="onlineLobbyStatus">MULTIPLAYER-SERVER EJ ANSLUTEN ÄNNU</div>
+    <div id="onlinePlayers"></div>
+    <div id="onlineLoadout">
+      <label>VAPEN<select id="onlineWeapon"><option value="mg">Kulspruta</option><option value="cannon">Kanon</option></select></label>
+      <label>UPGRADE<select id="onlineUpgrade"><option value="speed">Speed +25%</option><option value="armour">Armour 125 HP</option></select></label>
+    </div>
+    <div id="onlineHint">2–4 spelare. Den spelare som varit längst i lobbyn blir HOST och kan starta matchen.</div>
+    <div class="lobbyActions">
+      <button class="lobbyBtn" id="onlineBackBtn">TILLBAKA</button>
+      <button class="lobbyBtn" id="onlineStartBtn" disabled>ANSLUTER...</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
@@ -349,11 +428,40 @@ document.getElementById("tagStart").onclick=async()=>{
   await createOnlinePlayerEntry();
 
   document.getElementById("tagScreen").style.display="none";
+  document.getElementById("modePlayerName").textContent=tag;
+  document.getElementById("lobbyPlayerName").textContent=tag;
+  {const _llt=document.getElementById("localLobbyTag");if(_llt)_llt.textContent=tag;}
+  document.getElementById("modeScreen").style.display="flex";
+  updateScoreHud();
+  renderLeaderboard();
+};
+
+let gameMode=null;
+function openSingleplayer(){
+  onlineMatchStarted=false;onlineMatchId=null;
+  gameMode="singleplayer";
+  document.getElementById("modeScreen").style.display="none";
+  document.getElementById("onlineLobby").style.display="none";
   document.getElementById("splash").style.display="flex";
   document.getElementById("scoreHud").style.display="block";
   document.getElementById("leaderboardPanel").style.display="block";
-  updateScoreHud();
-  renderLeaderboard();
+}
+function openOnlineLobby(){
+  gameMode="online";
+  document.getElementById("modeScreen").style.display="none";
+  document.getElementById("splash").style.display="none";
+  document.getElementById("onlineLobby").style.display="flex";
+  document.getElementById("scoreHud").style.display="none";
+  document.getElementById("leaderboardPanel").style.display="none";
+  connectOnlineLobby();
+}
+document.getElementById("singleModeBtn").onclick=openSingleplayer;
+document.getElementById("onlineModeBtn").onclick=openOnlineLobby;
+document.getElementById("onlineBackBtn").onclick=async()=>{
+  await leaveOnlineLobby();
+  gameMode=null;
+  document.getElementById("onlineLobby").style.display="none";
+  document.getElementById("modeScreen").style.display="flex";
 };
 const savedTag=localStorage.getItem("roadWarriorsTag");
 if(savedTag)tagInput.value=sanitizeTag(savedTag);
@@ -518,6 +626,207 @@ let currentLeaderboardId=null;
 // Fill these two values later to enable global online saving.
 const SUPABASE_URL="https://htehbexncupjlffrekbm.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_t9Lph87lfNoCNv-AIOOwJw_q4mz0vu2";
+
+// ---- ONLINE MULTIPLAYER V1: Supabase Realtime Presence + Broadcast ----
+const ONLINE_CHANNEL_NAME="road-warriors-matchmaking-v2";
+const onlineClientId=(crypto.randomUUID?crypto.randomUUID():"rw-"+Date.now()+"-"+Math.random()).replace(/[^a-zA-Z0-9-]/g,"");
+let realtimeClient=null;
+let onlineChannel=null;
+let onlinePresence=[];
+const onlineJoinedAt=Date.now();
+let onlineHostId=null;
+let onlineMatchId=null;
+let onlineParticipants=[];
+let onlineMatchStarted=false;
+let onlineStateTimer=0;
+let remoteCars=new Map();
+let onlineResultShown=false;
+const onlineColors=["#2196f3","#e53935","#ff9800","#9c27b0"];
+
+function ensureRealtimeClient(){
+  if(realtimeClient)return realtimeClient;
+  if(!window.supabase||!window.supabase.createClient)throw new Error("Supabase Realtime-biblioteket kunde inte laddas.");
+  realtimeClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+  return realtimeClient;
+}
+function flatPresence(){
+  if(!onlineChannel)return [];
+  const state=onlineChannel.presenceState();
+  const out=[];
+  Object.entries(state).forEach(([key,arr])=>{
+    (arr||[]).forEach(x=>out.push({...x,presenceKey:key}));
+  });
+  const unique=new Map();
+  out.forEach(x=>{ if(x.id&&!unique.has(x.id))unique.set(x.id,x); });
+  return [...unique.values()].sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0)||String(a.id).localeCompare(String(b.id)));
+}
+function renderOnlineLobby(){
+  const box=document.getElementById("onlinePlayers");
+  const status=document.getElementById("onlineLobbyStatus");
+  const btn=document.getElementById("onlineStartBtn");
+  const players=onlinePresence.filter(p=>p.status!=="playing").slice(0,4);
+  onlineHostId=players[0]?.id||null;
+  box.innerHTML="";
+  for(let i=0;i<4;i++){
+    const p=players[i];
+    const row=document.createElement("div");row.className="onlinePlayer";
+    if(p){
+      const host=p.id===onlineHostId?" • HOST":"";
+      row.innerHTML='<span>'+String(p.tag||"PLAYER")+host+'</span><span class="onlineReady">READY</span>';
+    }else row.innerHTML='<span>Väntar på spelare...</span><span class="onlineWaiting">WAITING</span>';
+    box.appendChild(row);
+  }
+  const n=players.length;
+  if(onlineChannel){status.textContent="ANSLUTEN • "+n+" / 4 SPELARE";status.style.color="#77e08a";}
+  const amHost=onlineHostId===onlineClientId;
+  if(amHost&&n>=2){btn.disabled=false;btn.classList.add("ready");btn.textContent="STARTA ONLINE MATCH";}
+  else{btn.disabled=true;btn.classList.remove("ready");btn.textContent=n<2?"VÄNTAR PÅ SPELARE":"VÄNTAR PÅ HOST";}
+}
+async function connectOnlineLobby(){
+  if(onlineChannel)return;
+  const status=document.getElementById("onlineLobbyStatus");
+  status.textContent="ANSLUTER TILL REALTIME...";status.style.color="#f0bd6b";
+  try{
+    const sb=ensureRealtimeClient();
+    onlineChannel=sb.channel(ONLINE_CHANNEL_NAME,{config:{presence:{key:onlineClientId},broadcast:{self:false,ack:false}}});
+    onlineChannel
+      .on("presence",{event:"sync"},()=>{onlinePresence=flatPresence();renderOnlineLobby();})
+      .on("presence",{event:"join"},()=>{onlinePresence=flatPresence();renderOnlineLobby();})
+      .on("presence",{event:"leave"},({key})=>{onlinePresence=flatPresence();renderOnlineLobby();handleOnlineLeave(key);})
+      .on("broadcast",{event:"match_start"},({payload})=>handleOnlineMatchStart(payload))
+      .on("broadcast",{event:"state"},({payload})=>handleRemoteState(payload))
+      .on("broadcast",{event:"shot"},({payload})=>handleRemoteShot(payload))
+      .on("broadcast",{event:"pack"},({payload})=>handleRemotePack(payload))
+      .subscribe(async(statusCode,err)=>{
+        if(statusCode==="SUBSCRIBED"){
+          await onlineChannel.track({id:onlineClientId,tag:playerTagValue,joinedAt:onlineJoinedAt,status:"lobby"});
+          onlinePresence=flatPresence();renderOnlineLobby();
+        }else if(statusCode==="CHANNEL_ERROR"||statusCode==="TIMED_OUT"){
+          status.textContent="REALTIME-FEL: "+(err?.message||statusCode);status.style.color="#ff7161";
+        }
+      });
+  }catch(e){
+    console.error(e);status.textContent="KUNDE INTE ANSLUTA: "+e.message;status.style.color="#ff7161";
+  }
+}
+async function leaveOnlineLobby(){
+  try{if(onlineChannel)await onlineChannel.untrack();}catch(e){}
+  try{if(realtimeClient&&onlineChannel)await realtimeClient.removeChannel(onlineChannel);}catch(e){}
+  onlineChannel=null;onlinePresence=[];onlineHostId=null;
+}
+function seededRandom(seed){
+  let t=seed>>>0;
+  return ()=>{t+=0x6D2B79F5;let x=t;x=Math.imul(x^x>>>15,x|1);x^=x+Math.imul(x^x>>>7,x|61);return ((x^x>>>14)>>>0)/4294967296;};
+}
+function buildOnlineArena(){
+  // Host creates one normalized arena and shares it with everyone.
+  generateArena();
+  const occupied=[];const spawns=[];
+  for(let i=0;i<4;i++){const pt=randomFreePoint(occupied);occupied.push(pt);spawns.push(pt);}
+  const hp=[];
+  for(let i=0;i<3;i++){const pt=randomFreePoint([...occupied,...hp]);hp.push(pt);}
+  return {obstacles:JSON.parse(JSON.stringify(obstacles)),waters:JSON.parse(JSON.stringify(waters)),spawns,hp};
+}
+document.getElementById("onlineStartBtn").onclick=async()=>{
+  const players=onlinePresence.filter(p=>p.status!=="playing").slice(0,4);
+  if(onlineHostId!==onlineClientId||players.length<2||!onlineChannel)return;
+  const arena=buildOnlineArena();
+  const payload={matchId:"m-"+Date.now()+"-"+onlineClientId.slice(0,8),players:players.map((p,i)=>({id:p.id,tag:p.tag,color:onlineColors[i]})),arena,ts:Date.now()};
+  await onlineChannel.send({type:"broadcast",event:"match_start",payload});
+  handleOnlineMatchStart(payload);
+};
+function handleOnlineMatchStart(payload){
+  if(!payload||!Array.isArray(payload.players)||!payload.players.some(p=>p.id===onlineClientId))return;
+  if(onlineMatchStarted)return;
+  onlineMatchId=payload.matchId;onlineParticipants=payload.players;onlineMatchStarted=true;onlineResultShown=false;
+  if(onlineChannel)onlineChannel.track({id:onlineClientId,tag:playerTagValue,joinedAt:onlineJoinedAt,status:"playing",matchId:onlineMatchId}).catch(()=>{});
+  startOnlineMatch(payload);
+}
+function startOnlineMatch(cfg){
+  gameMode="online";
+  document.getElementById("onlineLobby").style.display="none";
+  document.getElementById("menu").style.display="none";
+  document.getElementById("splash").style.display="none";
+  document.getElementById("loadout").style.display="block";
+  document.getElementById("onlineMatchHud").style.display="block";
+  document.getElementById("leaderboardPanel").style.display="none";
+  weapon=document.getElementById("onlineWeapon").value||"mg";
+  upgrade=document.getElementById("onlineUpgrade").value||"speed";
+  player.maxSpeed=2.5;player.maxHealth=100;player.health=100;
+  if(upgrade==="speed")player.maxSpeed*=1.25;
+  if(upgrade==="armour"){player.maxHealth=125;player.health=125;}
+  document.getElementById("loadout").textContent=(weapon==="mg"?"Kulspruta":"Kanon")+" • "+(upgrade==="speed"?"Speed +25%":"Armour 125 HP");
+  obstacles=JSON.parse(JSON.stringify(cfg.arena.obstacles||[]));
+  waters=JSON.parse(JSON.stringify(cfg.arena.waters||[]));
+  packs.length=0;(cfg.arena.hp||[]).forEach(p=>packs.push({x:p.x,y:p.y,active:true}));
+  bullets.length=0;explosions.length=0;casings.length=0;muzzleFlashes.length=0;
+  remoteCars.clear();
+  const meIndex=cfg.players.findIndex(p=>p.id===onlineClientId);
+  const mySpawn=(cfg.arena.spawns||[])[meIndex]||{x:.15,y:.15};
+  player.x=mySpawn.x*canvas.width;player.y=mySpawn.y*canvas.height;player.angle=0;player.turret=0;player.speed=0;player.dead=false;
+  player.networkId=onlineClientId;player.netTag=playerTagValue;
+  cfg.players.forEach((p,i)=>{
+    if(p.id===onlineClientId)return;
+    const sp=(cfg.arena.spawns||[])[i]||{x:.8,y:.8};
+    const c=new Car(sp.x,sp.y,p.color||onlineColors[i],false);
+    c.remote=true;c.networkId=p.id;c.netTag=p.tag||"PLAYER";c.targetX=c.x;c.targetY=c.y;c.dead=false;
+    remoteCars.set(p.id,c);
+  });
+  enemies=[];cars=[player,...remoteCars.values()];
+  started=true;startTime=performance.now();bossFight=false;levelTransition=false;
+  document.getElementById("onlineMatchHud").textContent="ONLINE BATTLE • "+cfg.players.map(p=>p.tag).join(" vs ");
+  startEngineSound();
+  sendOnlineState(true);
+}
+async function sendOnline(type,payload){
+  if(!onlineChannel||!onlineMatchId)return;
+  try{await onlineChannel.send({type:"broadcast",event:type,payload:{matchId:onlineMatchId,from:onlineClientId,...payload}});}catch(e){}
+}
+function sendOnlineState(force=false){
+  if(gameMode!=="online"||!onlineMatchStarted||!started)return;
+  const now=performance.now();if(!force&&now-onlineStateTimer<65)return;onlineStateTimer=now;
+  sendOnline("state",{tag:playerTagValue,x:player.x/canvas.width,y:player.y/canvas.height,angle:player.angle,turret:player.turret,health:player.health,maxHealth:player.maxHealth,dead:player.dead});
+}
+function handleRemoteState(p){
+  if(!p||p.matchId!==onlineMatchId||p.from===onlineClientId)return;
+  const c=remoteCars.get(p.from);if(!c)return;
+  c.targetX=(p.x??0)*canvas.width;c.targetY=(p.y??0)*canvas.height;c.angle=p.angle??c.angle;c.turret=p.turret??c.turret;c.health=p.health??c.health;c.maxHealth=p.maxHealth??c.maxHealth;c.dead=!!p.dead;c.netTag=p.tag||c.netTag;
+}
+function updateRemoteCars(){
+  for(const c of remoteCars.values()){
+    if(c.dead)continue;
+    c.x+=(c.targetX-c.x)*.35;c.y+=(c.targetY-c.y)*.35;
+  }
+}
+function handleRemoteShot(p){
+  if(!p||p.matchId!==onlineMatchId||p.from===onlineClientId)return;
+  const owner=remoteCars.get(p.from);if(!owner)return;
+  const a=p.angle??owner.turret, sp=p.spd||9;
+  bullets.push({x:p.x*canvas.width,y:p.y*canvas.height,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,owner,damage:p.damage,size:p.size,type:p.shotType||"normal",life:p.life||110,networkShot:true});
+  if(p.shotType==="cannon")cannonSound();else machineGunSound();
+}
+function handleRemotePack(p){
+  if(!p||p.matchId!==onlineMatchId)return;
+  const pack=packs[p.index];if(!pack)return;pack.active=false;setTimeout(()=>pack.active=true,8000);
+}
+function handleOnlineLeave(){
+  if(!onlineMatchStarted)return;
+  const activeIds=new Set(flatPresence().map(x=>x.id));
+  for(const [id,c] of remoteCars){if(!activeIds.has(id)){c.dead=true;c.health=0;}}
+}
+function onlineHud(){
+  ctx.fillStyle="#fff";ctx.font="bold 18px Arial";ctx.textAlign="left";
+  ctx.fillText("Hälsa: "+Math.round(player.health),18,canvas.height-24);
+  const alive=[player,...remoteCars.values()].filter(c=>!c.dead).length;
+  ctx.fillText("Spelare kvar: "+alive,18,canvas.height-48);
+  if(player.dead&&!onlineResultShown){
+    ctx.fillStyle="rgba(0,0,0,.72)";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign="center";ctx.font="bold 58px Arial";ctx.fillStyle="#ff4d3d";ctx.fillText("DU ÄR UTSLAGEN",canvas.width/2,canvas.height/2);ctx.font="bold 20px Arial";ctx.fillStyle="#fff";ctx.fillText("Matchen fortsätter",canvas.width/2,canvas.height/2+42);
+  }
+  if(!player.dead&&remoteCars.size>0&&[...remoteCars.values()].every(c=>c.dead)&&!onlineResultShown){
+    onlineResultShown=true;started=false;const v=document.getElementById("victoryScreen");const t=v.querySelector(".victoryText");if(t)t.textContent="DU VANN ONLINE!";v.style.display="flex";setTimeout(()=>{v.onclick=()=>location.reload();},400);
+  }
+}
+
 
 function sanitizeTag(v){
   return (v||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,10);
@@ -782,6 +1091,7 @@ function updateReady(){
   if(weapon&&upgrade)startBtn.classList.add("ready");
 }
 startBtn.onclick=()=>{
+  if(gameMode!=="singleplayer")return;
   startEngineSound();
   if(!weapon||!upgrade)return;
   if(upgrade==="speed")player.maxSpeed*=1.25;
@@ -989,6 +1299,7 @@ class Car{
 
   update(){
     if(this.dead)return;
+    if(this.remote)return;
     if(this.reload>0)this.reload--;
     if(this.player)this.playerUpdate();else this.aiUpdate();
 
@@ -997,6 +1308,7 @@ class Car{
       if(p.active&&Math.hypot(this.x-px,this.y-py)<26&&this.health<this.maxHealth){
         this.health=Math.min(this.maxHealth,this.health+35);
         p.active=false;
+        if(gameMode==="online"&&this===player){const pi=packs.indexOf(p);sendOnline("pack",{index:pi});sendOnlineState(true);}
         setTimeout(()=>p.active=true,8000);
       }
     }
@@ -1115,13 +1427,17 @@ ejectCasing(big=false,burstIndex=0){
 }
 shoot(damage=20,spd=9,size=4,type="normal"){
     const m=28;
-    bullets.push({
+    const shot={
       x:this.x+Math.cos(this.turret)*m,
       y:this.y+Math.sin(this.turret)*m,
       vx:Math.cos(this.turret)*spd,
       vy:Math.sin(this.turret)*spd,
       owner:this,damage,size,type,life:110
-    });
+    };
+    bullets.push(shot);
+    if(gameMode==="online"&&this===player){
+      sendOnline("shot",{x:shot.x/canvas.width,y:shot.y/canvas.height,angle:this.turret,spd,damage,size,shotType:type,life:110});
+    }
   }
 
   burst(){
@@ -1139,6 +1455,7 @@ shoot(damage=20,spd=9,size=4,type="normal"){
   damage(n){
     if(this.dead)return;
     this.health-=n;
+    if(gameMode==="online"&&this===player)sendOnlineState(true);
     if(this.health<=0){
       this.health=0;
       this.dead=true;
@@ -1163,7 +1480,7 @@ shoot(damage=20,spd=9,size=4,type="normal"){
     ctx.shadowColor="transparent";ctx.fillStyle="rgba(255,255,255,.25)";ctx.fillRect(-11,-8,12,16);ctx.fillStyle="#222";ctx.fillRect(8,-7,7,14);ctx.restore();
     ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.turret);ctx.fillStyle="#151515";ctx.strokeStyle="#fff";ctx.lineWidth=1.5;ctx.fillRect(0,-4,31,8);ctx.strokeRect(0,-4,31,8);ctx.beginPath();ctx.arc(0,0,9,0,Math.PI*2);ctx.fillStyle=this.color;ctx.fill();ctx.stroke();ctx.restore();
     const w=46;ctx.fillStyle="rgba(0,0,0,.8)";ctx.fillRect(this.x-w/2,this.y-36,w,7);ctx.fillStyle=this.health>60?"#20e060":this.health>30?"#ffb000":"#ff3030";ctx.fillRect(this.x-w/2,this.y-36,w*(this.health/this.maxHealth),7);
-    ctx.fillStyle="#fff";ctx.font="bold 11px Arial";ctx.textAlign="center";ctx.fillText(this.player?"DU":"FIENDE",this.x,this.y+35);
+    ctx.fillStyle="#fff";ctx.font="bold 11px Arial";ctx.textAlign="center";ctx.fillText(this.player?"DU":(this.remote?(this.netTag||"PLAYER"):"FIENDE"),this.x,this.y+35);
   }
 }
 
@@ -1238,7 +1555,9 @@ function updateBullets(){
     for(const c of cars){
       if(c===b.owner||c.dead)continue;
       if(Math.hypot(c.x-b.x,c.y-b.y)<c.radius){
-        c.damage(b.damage);
+        if(gameMode!=="online" || c===player){
+          c.damage(b.damage);
+        }
         explosions.push({x:b.x,y:b.y,r:4,life:9});
         remove=true;
       }
@@ -1689,7 +2008,6 @@ function showBossIntro(name){
   const profile=bossProfile(name);
   document.getElementById("bossIntroName").textContent="Boss fight against "+profile.name+"!";
   document.getElementById("bossIntroDesc").textContent=profile.description;
-  document.getElementById("bossStartBtn").textContent="FIGHT "+profile.name;
   document.getElementById("bossIntro").style.display="flex";
 }
 
@@ -1770,6 +2088,7 @@ document.getElementById("nextLevelBtn").onclick=()=>{
 };
 
 function hud(){
+  if(gameMode==="online"){onlineHud();return;}
   ctx.fillStyle="#fff";
   ctx.font="bold 18px Arial";
   ctx.textAlign="left";
@@ -1801,6 +2120,7 @@ function loop(){
 
   if(started){
     cars.forEach(c=>c.update());
+    if(gameMode==="online"){updateRemoteCars();sendOnlineState();}
     updateBullets();
     updateCasings();
     updateMuzzleFlashes();

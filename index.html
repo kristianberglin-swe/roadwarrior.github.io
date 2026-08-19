@@ -310,7 +310,7 @@ canvas{display:block;width:100vw;height:100vh}
   <div id="tagShade"></div>
   <div id="tagBox">
     <h2>ENTER YOUR TAG</h2>
-    <div>1–10 tecken: bokstäver eller siffror</div><div style="font-size:13px;color:#cdb58e;margin:8px 0 16px">Snabbare level = högre tidsbonus • Levelbonus: 10/20/30/40/50 • Boss: 200 p + speed/health bonus</div>
+    <div>1–10 tecken: bokstäver eller siffror</div><div style="font-size:13px;color:#cdb58e;margin:8px 0 16px">Snabbare level = högre tidsbonus • Levelbonus: 10/20/30/40/50/60/70 • Boss: 200 p + speed/health bonus</div>
     <input id="playerTag" maxlength="10" autocomplete="off" spellcheck="false">
     <button id="tagStart">CONTINUE</button>
   </div>
@@ -334,7 +334,7 @@ canvas{display:block;width:100vw;height:100vh}
   <div id="bossIntroBox">
     <h2 id="bossIntroName">Boss fight!</h2>
     <p id="bossIntroDesc"></p>
-    <button id="bossStartBtn">FIGHT HUMUNGUS</button>
+    <button id="bossStartBtn">STARTA BOSSFIGHT</button>
   </div>
 </div>
 <div id="victoryScreen">
@@ -1195,7 +1195,7 @@ let levelTransition=false;
 let bossFight=false;
 let humungus=null;
 let bossIndex=-1;
-const bossSequence=["TOECUTTER","HUMUNGUS","IMMORTAN JOE","FURIOSA"];
+const bossSequence=["TOECUTTER","HUMUNGUS","IMMORTAL JOE","FURIOSA"];
 const startBtn=document.getElementById("start");
 
 document.querySelectorAll(".weapon").forEach(el=>{
@@ -1636,6 +1636,16 @@ function spawnLevel(level){
     const s=randomFreePoint(spawnPoints);
     spawnPoints.push(s);
     const enemy=new Car(s.x,s.y,colors[i%colors.length]);
+    // Level 6–7: veteran enemies are faster and tougher than earlier opponents.
+    if(level===6){
+      enemy.maxSpeed=1.70;
+      enemy.maxHealth=130;
+      enemy.health=130;
+    }else if(level>=7){
+      enemy.maxSpeed=1.90;
+      enemy.maxHealth=160;
+      enemy.health=160;
+    }
     enemy.angle=rand(0,Math.PI*2);
     enemy.turret=enemy.angle;
     enemies.push(enemy);
@@ -1659,7 +1669,7 @@ function spawnLevel(level){
   resetLevelScoring();
 
   const banner=document.getElementById("levelBanner");
-  banner.textContent="LEVEL "+level+" / 5";
+  banner.textContent="LEVEL "+level+" / 7";
   banner.style.display="block";
 
   startEngineSound();
@@ -2056,9 +2066,9 @@ function bossProfile(name){
       description:"400 % hälsa • stor stridsbil • kanon + kulspruta"
     };
   }
-  if(name==="IMMORTAN JOE"){
+  if(name==="IMMORTAL JOE"){
     return {
-      name:"IMMORTAN JOE", color:"#c8c3ad",
+      name:"IMMORTAL JOE", color:"#c8c3ad",
       hp:1000, scale:1.95, radius:34, maxSpeed:1.15,
       mgDamage:0, mgReload:9999,
       cannon:true, cannonDamage:42, cannonReload:48,
@@ -2135,6 +2145,7 @@ function showBossIntro(name){
   const profile=bossProfile(name);
   document.getElementById("bossIntroName").textContent="Boss fight against "+profile.name+"!";
   document.getElementById("bossIntroDesc").textContent=profile.description;
+  document.getElementById("bossStartBtn").textContent="FIGHT "+profile.name;
   document.getElementById("bossIntro").style.display="flex";
 }
 
@@ -2174,7 +2185,7 @@ function showLevelComplete(){
 
   overlay.style.display="flex";
 
-  if(currentLevel>=5 && !bossFight){
+  if(currentLevel>=7 && !bossFight){
     overlay.style.display="none";
     bossIndex=0;
     showBossIntro(bossSequence[bossIndex]);
@@ -2206,7 +2217,7 @@ document.getElementById("bossStartBtn").onclick=()=>{
 
 document.getElementById("nextLevelBtn").onclick=()=>{
   document.getElementById("nextLevel").style.display="none";
-  if(currentLevel>=5){
+  if(currentLevel>=7){
     location.reload();
     return;
   }
@@ -2223,7 +2234,7 @@ function hud(){
   ctx.fillText("Fiender kvar: "+enemies.filter(x=>!x.dead).length,18,canvas.height-48);
 
   ctx.fillStyle="#fff";
-  ctx.fillText(bossFight&&humungus?"BOSS: "+(humungus.bossName||"BOSS"):"Level: "+currentLevel+" / 5",18,canvas.height-72);
+  ctx.fillText(bossFight&&humungus?"BOSS: "+(humungus.bossName||"BOSS"):"Level: "+currentLevel+" / 7",18,canvas.height-72);
 
   if(player.dead){
     if(!finalScoreSaved)saveFinalScore({died_level:bossFight?"boss":currentLevel});

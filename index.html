@@ -832,7 +832,7 @@ function startOnlineMatch(cfg){
     remoteCars.set(p.id,c);
   });
   enemies=[];cars=[player,...remoteCars.values()];
-  started=true;startTime=performance.now();bossFight=false;levelTransition=false;
+  started=true;startTime=performance.now();onlineSimLast=startTime;onlineSimAccumulator=0;bossFight=false;levelTransition=false;
   document.getElementById("onlineMatchHud").textContent="ONLINE BATTLE • "+cfg.players.map(p=>p.tag).join(" vs ");
   startEngineSound();
   sendOnlineState(true);
@@ -2251,18 +2251,50 @@ function hud(){
   }
 }
 
-function loop(){
+// Online physics runs at a fixed 60 Hz so gameplay speed is independent of monitor refresh rate.
+const ONLINE_TICK_MS=1000/60;
+let onlineSimLast=performance.now();
+let onlineSimAccumulator=0;
+
+function onlineSimulationTick(){
+  cars.forEach(c=>c.update());
+  updateRemoteCars();
+  sendOnlineState();
+  updateBullets();
+  updateCasings();
+  updateMuzzleFlashes();
+  updateExplosions();
+}
+
+function loop(now=performance.now()){
   updateGamepadInput();
   updateEngineSound();
   drawArena();
 
   if(started){
-    cars.forEach(c=>c.update());
-    if(gameMode==="online"){updateRemoteCars();sendOnlineState();}
-    updateBullets();
-    updateCasings();
-    updateMuzzleFlashes();
-    updateExplosions();
+    if(gameMode==="online"){
+      // Fixed-timestep network simulation. Clamp long pauses to avoid a huge catch-up burst.
+      const elapsed=Math.min(100,Math.max(0,now-onlineSimLast));
+      onlineSimLast=now;
+      onlineSimAccumulator+=elapsed;
+      let steps=0;
+      while(onlineSimAccumulator>=ONLINE_TICK_MS && steps<5){
+        onlineSimulationTick();
+        onlineSimAccumulator-=ONLINE_TICK_MS;
+        steps++;
+      }
+    }else{
+      onlineSimLast=now;
+      onlineSimAccumulator=0;
+      cars.forEach(c=>c.update());
+      updateBullets();
+      updateCasings();
+      updateMuzzleFlashes();
+      updateExplosions();
+    }
+  }else{
+    onlineSimLast=now;
+    onlineSimAccumulator=0;
   }
 
   drawPacks();
@@ -2277,7 +2309,7 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
-loop();
+requestAnimationFrame(loop);
 
 
 

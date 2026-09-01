@@ -165,12 +165,20 @@ canvas{display:block;width:100vw;height:100vh}
  padding:6px 12px;border-radius:7px;font-weight:bold;display:none;
 }
 #leaderboardPanel{
- position:fixed;right:14px;top:72px;z-index:14;width:265px;
- background:rgba(15,10,7,.32);border:1px solid rgba(180,140,80,.45);border-radius:10px;
- padding:12px;color:#fff;display:none;box-shadow:0 6px 18px rgba(0,0,0,.18);backdrop-filter:blur(2px);
+ position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:40;width:330px;
+ background:linear-gradient(145deg,rgba(24,19,14,.97),rgba(5,5,5,.98));
+ border:3px solid #9b7746;border-radius:12px;padding:18px 18px 14px;color:#fff;display:none;
+ box-shadow:0 0 0 2px rgba(0,0,0,.9),0 12px 35px rgba(0,0,0,.85),inset 0 0 22px rgba(185,132,62,.10);
+ backdrop-filter:blur(6px);
 }
-#leaderboardPanel h3{margin:0 0 8px;color:#f1ca83;text-align:center}
-#leaderboardList{font-size:13px;line-height:1.55}
+#leaderboardPanel:before{
+ content:"";position:absolute;inset:5px;border:1px solid rgba(226,190,121,.22);border-radius:7px;pointer-events:none;
+}
+#leaderboardPanel h3{
+ position:relative;margin:0 0 13px;padding-bottom:10px;color:#f4d28f;text-align:center;
+ font-size:20px;letter-spacing:1.7px;text-shadow:0 2px 3px #000;border-bottom:2px solid rgba(155,119,70,.55);
+}
+#leaderboardList{position:relative;font-size:16px;line-height:1.45}
 #leaderboardList .row{display:flex;justify-content:space-between;margin:0}
 #scoreBreakdown{
  font-size:15px;line-height:1.55;text-align:left;margin-top:16px;color:#f2dfbd;
@@ -179,17 +187,24 @@ canvas{display:block;width:100vw;height:100vh}
 
 #leaderboardList .row{
  display:flex;justify-content:space-between;align-items:center;
- padding:5px 7px;margin:2px 0;border-radius:6px;
- background:rgba(255,255,255,.018);
+ padding:8px 9px;margin:4px 0;border-radius:5px;
+ background:rgba(255,255,255,.045);border-left:3px solid rgba(155,119,70,.32);
+ text-shadow:0 2px 2px #000;
 }
+#leaderboardList .row:nth-child(1){font-size:18px;background:rgba(205,157,69,.18);border-left-color:#e1b85e}
+#leaderboardList .row:nth-child(2){background:rgba(190,190,190,.10);border-left-color:#bfc1c4}
+#leaderboardList .row:nth-child(3){background:rgba(171,105,55,.13);border-left-color:#b27645}
 #leaderboardList .row.me{
- background:rgba(220,165,70,.10);
- border:1px solid rgba(230,185,95,.55);
- color:#ffe2a4;
+ outline:1px solid rgba(245,205,115,.8);background:rgba(220,165,70,.17);color:#fff1c9;
 }
-#leaderboardList .rank{display:inline-block;width:24px;color:#c9b28c}
-#leaderboardList .tag{font-weight:bold;letter-spacing:1px}
-#leaderboardList .score{font-weight:bold;color:#f1ca83}
+#leaderboardList .rank{display:inline-block;width:30px;color:#d8bd8d;font-weight:900}
+#leaderboardList .tag{font-weight:900;letter-spacing:1.4px}
+#leaderboardList .score{font-weight:900;color:#ffd989;font-size:17px}
+#leaderboardStatus{position:relative!important;margin-top:11px!important;font-size:11px!important;font-weight:800;letter-spacing:1.5px!important}
+@media(max-width:900px){
+ #leaderboardPanel{right:12px;width:280px;padding:14px;transform:translateY(-50%) scale(.92);transform-origin:right center}
+ #leaderboardList{font-size:14px}
+}
 
 
 /* ===== GAME MODE / ONLINE LOBBY ===== */
@@ -317,7 +332,7 @@ canvas{display:block;width:100vw;height:100vh}
 </div>
 <div id="scoreHud">SCORE: 0</div>
 <div id="leaderboardPanel">
-  <h3>TOP 10 ROAD WARRIORS</h3>
+  <h3>TOP 10 – SINGLEPLAYER</h3>
   <div id="leaderboardList">Ingen score ännu.</div><div id="leaderboardStatus" style="margin-top:7px;font-size:10px;color:#c9b28c;text-align:center;letter-spacing:1px">Ansluter...</div>
 
 </div>

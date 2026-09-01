@@ -516,8 +516,9 @@ function openSingleplayer(){
   if(splash)splash.style.display="none";
   document.getElementById("menu").style.display="flex";
   document.getElementById("scoreHud").style.display="block";
-  // Dölj den gamla poängtopplistan under själva spelet så att den inte skymmer sikten.
-  document.getElementById("leaderboardPanel").style.display="none";
+  // Visa singleplayer-topplistan i loadout-menyn, men inte under själva spelet.
+  document.getElementById("leaderboardPanel").style.display="block";
+  renderLeaderboard();
 }
 function openOnlineLobby(){
   gameMode="online";
@@ -1226,6 +1227,8 @@ startBtn.onclick=()=>{
   if(upgrade==="armour"){player.maxHealth=125;player.health=125}
   currentLevel=1;
   document.getElementById("menu").style.display="none";
+  // Topplistan ska aldrig ligga ovanpå spelplanen.
+  document.getElementById("leaderboardPanel").style.display="none";
   const l=document.getElementById("loadout");
   l.style.display="block";
   l.textContent=(weapon==="mg"?"Kulspruta":"Kanon")+" • "+(upgrade==="speed"?"Speed +25%":"Armour 125 HP");

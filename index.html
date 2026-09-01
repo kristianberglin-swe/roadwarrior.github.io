@@ -516,7 +516,8 @@ function openSingleplayer(){
   if(splash)splash.style.display="none";
   document.getElementById("menu").style.display="flex";
   document.getElementById("scoreHud").style.display="block";
-  document.getElementById("leaderboardPanel").style.display="block";
+  // Dölj den gamla poängtopplistan under själva spelet så att den inte skymmer sikten.
+  document.getElementById("leaderboardPanel").style.display="none";
 }
 function openOnlineLobby(){
   gameMode="online";

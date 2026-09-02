@@ -1024,6 +1024,19 @@ html,body{
   }
 }
 
+
+/* ===== Mobile v22: first-to-five online series ===== */
+@media (hover:none) and (pointer:coarse), (max-width:950px){
+  #onlineMatchHud{
+    opacity:.58!important;
+    font-size:10px!important;
+    padding:4px 8px!important;
+    max-width:76vw!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+}
 </style>
 </head>
 <body>
@@ -1522,6 +1535,14 @@ let onlineStateTimer=0;
 let remoteCars=new Map();
 let onlineResultShown=false;
 let onlineWinSavedForMatch=null;
+
+// Online series: first to 5 round wins.
+const ONLINE_SERIES_TARGET=5;
+let onlineSeriesId=null;
+let onlineSeriesRound=1;
+let onlineSeriesWins={};
+let onlineRoundResultHandled=null;
+let onlineSeriesNextTimer=0;
 const onlineColors=["#2196f3","#e53935","#ff9800","#9c27b0"];
 
 function ensureRealtimeClient(){
@@ -1575,6 +1596,7 @@ async function connectOnlineLobby(){
       .on("presence",{event:"join"},()=>{onlinePresence=flatPresence();renderOnlineLobby();})
       .on("presence",{event:"leave"},({key})=>{onlinePresence=flatPresence();renderOnlineLobby();handleOnlineLeave(key);})
       .on("broadcast",{event:"match_start"},({payload})=>handleOnlineMatchStart(payload))
+      .on("broadcast",{event:"round_result"},({payload})=>handleOnlineRoundResult(payload))
       .on("broadcast",{event:"state"},({payload})=>handleRemoteState(payload))
       .on("broadcast",{event:"shot"},({payload})=>handleRemoteShot(payload))
       .on("broadcast",{event:"pack"},({payload})=>handleRemotePack(payload))
@@ -1611,16 +1633,49 @@ function buildOnlineArena(){
 document.getElementById("onlineStartBtn").onclick=async()=>{
   const players=onlinePresence.filter(p=>p.status!=="playing").slice(0,4);
   if(onlineHostId!==onlineClientId||players.length<2||!onlineChannel)return;
+
+  const seriesPlayers=players.map((p,i)=>({id:p.id,tag:p.tag,color:onlineColors[i]}));
+  onlineSeriesId="s-"+Date.now()+"-"+onlineClientId.slice(0,8);
+  onlineSeriesRound=1;
+  onlineSeriesWins={};
+  seriesPlayers.forEach(p=>onlineSeriesWins[p.id]=0);
+  onlineRoundResultHandled=null;
+
   const arena=buildOnlineArena();
-  const payload={matchId:"m-"+Date.now()+"-"+onlineClientId.slice(0,8),players:players.map((p,i)=>({id:p.id,tag:p.tag,color:onlineColors[i]})),arena,ts:Date.now()};
+  const payload={
+    matchId:"m-"+Date.now()+"-"+onlineClientId.slice(0,8),
+    seriesId:onlineSeriesId,
+    round:1,
+    seriesScores:{...onlineSeriesWins},
+    players:seriesPlayers,
+    arena,
+    ts:Date.now()
+  };
   await onlineChannel.send({type:"broadcast",event:"match_start",payload});
   handleOnlineMatchStart(payload);
 };
 function handleOnlineMatchStart(payload){
   if(!payload||!Array.isArray(payload.players)||!payload.players.some(p=>p.id===onlineClientId))return;
   if(onlineMatchStarted)return;
-  onlineMatchId=payload.matchId;onlineParticipants=payload.players;onlineMatchStarted=true;onlineResultShown=false;onlineWinSavedForMatch=null;
-  if(onlineChannel)onlineChannel.track({id:onlineClientId,tag:playerTagValue,joinedAt:onlineJoinedAt,status:"playing",matchId:onlineMatchId}).catch(()=>{});
+
+  onlineMatchId=payload.matchId;
+  onlineParticipants=payload.players;
+  onlineMatchStarted=true;
+  onlineResultShown=false;
+  onlineWinSavedForMatch=null;
+  onlineRoundResultHandled=null;
+
+  onlineSeriesId=payload.seriesId||onlineSeriesId||("s-"+Date.now());
+  onlineSeriesRound=Number(payload.round||1);
+  onlineSeriesWins={...(payload.seriesScores||onlineSeriesWins||{})};
+  onlineParticipants.forEach(p=>{
+    if(typeof onlineSeriesWins[p.id]!=="number")onlineSeriesWins[p.id]=0;
+  });
+
+  if(onlineChannel)onlineChannel.track({
+    id:onlineClientId,tag:playerTagValue,joinedAt:onlineJoinedAt,
+    status:"playing",matchId:onlineMatchId,seriesId:onlineSeriesId
+  }).catch(()=>{});
   startOnlineMatch(payload);
 }
 function startOnlineMatch(cfg){
@@ -1656,7 +1711,9 @@ function startOnlineMatch(cfg){
   });
   enemies=[];cars=[player,...remoteCars.values()];
   started=true;startTime=performance.now();onlineSimLast=startTime;onlineSimAccumulator=0;bossFight=false;levelTransition=false;
-  document.getElementById("onlineMatchHud").textContent="ONLINE BATTLE • "+cfg.players.map(p=>p.tag).join(" vs ");
+  document.getElementById("onlineMatchHud").textContent=
+    "FÖRST TILL "+ONLINE_SERIES_TARGET+" • ROND "+onlineSeriesRound+" • "+
+    cfg.players.map(p=>(p.tag||"PLAYER")+" "+(onlineSeriesWins[p.id]||0)).join("  •  ");
   startEngineSound();
   sendOnlineState(true);
 }
@@ -1696,6 +1753,169 @@ function handleOnlineLeave(){
   const activeIds=new Set(flatPresence().map(x=>x.id));
   for(const [id,c] of remoteCars){if(!activeIds.has(id)){c.dead=true;c.health=0;}}
 }
+
+function onlineSeriesScoreText(){
+  return onlineParticipants
+    .map(p=>(p.tag||"PLAYER")+" "+(onlineSeriesWins[p.id]||0))
+    .join("  •  ");
+}
+
+function hideOnlineResultScreen(){
+  const v=document.getElementById("victoryScreen");
+  if(v){
+    v.style.display="none";
+    v.onclick=null;
+  }
+}
+
+async function returnOnlineSeriesToLobby(){
+  if(onlineSeriesNextTimer){
+    clearTimeout(onlineSeriesNextTimer);
+    onlineSeriesNextTimer=0;
+  }
+  started=false;
+  onlineMatchStarted=false;
+  onlineMatchId=null;
+  onlineResultShown=false;
+  onlineRoundResultHandled=null;
+  mouse.down=false;
+
+  hideOnlineResultScreen();
+  document.getElementById("onlineMatchHud").style.display="none";
+  document.getElementById("loadout").style.display="none";
+  document.getElementById("onlineLobby").style.display="flex";
+
+  bullets.length=0;
+  explosions.length=0;
+  demolitionDust.length=0;
+  casings.length=0;
+  muzzleFlashes.length=0;
+  remoteCars.clear();
+  enemies=[];
+  cars=[player];
+  player.dead=false;
+  player.speed=0;
+
+  if(onlineChannel){
+    try{
+      await onlineChannel.track({
+        id:onlineClientId,
+        tag:playerTagValue,
+        joinedAt:onlineJoinedAt,
+        status:"lobby"
+      });
+    }catch(_){}
+  }
+
+  onlineSeriesId=null;
+  onlineSeriesRound=1;
+  onlineSeriesWins={};
+  onlineParticipants=[];
+  onlinePresence=flatPresence();
+  renderOnlineLobby();
+}
+
+async function startNextOnlineSeriesRound(){
+  if(!onlineChannel||!onlineParticipants.length)return;
+  const seriesHostId=onlineParticipants[0]?.id;
+  if(seriesHostId!==onlineClientId)return;
+
+  const arena=buildOnlineArena();
+  const payload={
+    matchId:"m-"+Date.now()+"-"+onlineClientId.slice(0,8),
+    seriesId:onlineSeriesId,
+    round:onlineSeriesRound+1,
+    seriesScores:{...onlineSeriesWins},
+    players:onlineParticipants.map((p,i)=>({
+      id:p.id,
+      tag:p.tag,
+      color:p.color||onlineColors[i]
+    })),
+    arena,
+    ts:Date.now()
+  };
+
+  await onlineChannel.send({type:"broadcast",event:"match_start",payload});
+  handleOnlineMatchStart(payload);
+}
+
+function handleOnlineRoundResult(p){
+  if(!p||p.seriesId!==onlineSeriesId)return;
+  if(onlineRoundResultHandled===p.matchId)return;
+  onlineRoundResultHandled=p.matchId;
+
+  started=false;
+  onlineMatchStarted=false;
+  onlineResultShown=true;
+  mouse.down=false;
+  try{stopMachineGunSounds();}catch(_){}
+
+  onlineSeriesWins={...(p.seriesScores||onlineSeriesWins)};
+  onlineSeriesRound=Number(p.round||onlineSeriesRound);
+
+  const winnerScore=onlineSeriesWins[p.winnerId]||0;
+  const seriesFinished=winnerScore>=ONLINE_SERIES_TARGET;
+
+  const v=document.getElementById("victoryScreen");
+  const t=v?.querySelector(".victoryText");
+  if(t){
+    if(seriesFinished){
+      t.innerHTML=(p.winnerTag||"PLAYER")+" VINNER MATCHEN!<br>"+
+        "<span style='font-size:.48em'>"+onlineSeriesScoreText()+"</span>";
+    }else{
+      t.innerHTML=(p.winnerTag||"PLAYER")+" VINNER RONDEN<br>"+
+        "<span style='font-size:.48em'>"+onlineSeriesScoreText()+
+        " • först till "+ONLINE_SERIES_TARGET+"</span>";
+    }
+  }
+  if(v){
+    v.onclick=null;
+    v.style.display="flex";
+  }
+
+  if(onlineSeriesNextTimer)clearTimeout(onlineSeriesNextTimer);
+
+  if(seriesFinished){
+    onlineSeriesNextTimer=setTimeout(()=>returnOnlineSeriesToLobby(),3200);
+  }else{
+    onlineSeriesNextTimer=setTimeout(async()=>{
+      hideOnlineResultScreen();
+      await startNextOnlineSeriesRound();
+    },2200);
+  }
+}
+
+async function reportOnlineRoundWin(){
+  if(onlineResultShown||!onlineMatchId||!onlineSeriesId)return;
+
+  onlineResultShown=true;
+  started=false;
+
+  const scores={...onlineSeriesWins};
+  scores[onlineClientId]=(scores[onlineClientId]||0)+1;
+
+  const payload={
+    matchId:onlineMatchId,
+    seriesId:onlineSeriesId,
+    round:onlineSeriesRound,
+    winnerId:onlineClientId,
+    winnerTag:playerTagValue,
+    seriesScores:scores
+  };
+
+  // Existing daily leaderboard still counts each round win.
+  try{saveMultiplayerWin(onlineMatchId,playerTagValue);}catch(_){}
+
+  if(onlineChannel){
+    try{
+      await onlineChannel.send({type:"broadcast",event:"round_result",payload});
+    }catch(_){}
+  }
+
+  // Broadcast is self:false, so handle locally as well.
+  handleOnlineRoundResult(payload);
+}
+
 function onlineHud(){
   ctx.fillStyle="#fff";ctx.font="bold 18px Arial";ctx.textAlign="left";
   ctx.fillText("Hälsa: "+Math.round(player.health),18,canvas.height-24);
@@ -1705,7 +1925,7 @@ function onlineHud(){
     ctx.fillStyle="rgba(0,0,0,.72)";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign="center";ctx.font="bold 58px Arial";ctx.fillStyle="#ff4d3d";ctx.fillText("DU ÄR UTSLAGEN",canvas.width/2,canvas.height/2);ctx.font="bold 20px Arial";ctx.fillStyle="#fff";ctx.fillText("Matchen fortsätter",canvas.width/2,canvas.height/2+42);
   }
   if(!player.dead&&remoteCars.size>0&&[...remoteCars.values()].every(c=>c.dead)&&!onlineResultShown){
-    onlineResultShown=true;started=false;saveMultiplayerWin(onlineMatchId,playerTagValue);const v=document.getElementById("victoryScreen");const t=v.querySelector(".victoryText");if(t)t.textContent="DU VANN ONLINE!";v.style.display="flex";setTimeout(()=>{v.onclick=()=>location.reload();},400);
+    reportOnlineRoundWin();
   }
 }
 
@@ -3772,10 +3992,10 @@ requestAnimationFrame(loop);
 })();
 </script>
 
-<script>console.log("ROADWARRIOR MOBILE BUILD v21");</script>
+<script>console.log("ROADWARRIOR MOBILE BUILD v22");</script>
 
 <script>
-/* ROADWARRIOR MOBILE BUILD v21 - faster restart */
+/* ROADWARRIOR MOBILE BUILD v22 - faster restart */
 requestAnimationFrame(()=>{
   for(const id of ["reset"]){
     const btn=document.getElementById(id);

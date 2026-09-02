@@ -1010,6 +1010,20 @@ html,body{
   }
 }
 
+
+/* ===== Mobile v20: immediate restart feedback ===== */
+@media (hover:none) and (pointer:coarse), (max-width:950px){
+  #restartBtn,#restart,#gameOverRestart,#retryBtn,#restartGame{
+    touch-action:manipulation!important;
+    -webkit-tap-highlight-color:transparent!important;
+    transition:transform .03s linear,filter .03s linear!important;
+  }
+  #restartBtn:active,#restart:active,#gameOverRestart:active,#retryBtn:active,#restartGame:active{
+    transform:scale(.95)!important;
+    filter:brightness(1.22)!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -3757,6 +3771,32 @@ requestAnimationFrame(loop);
 })();
 </script>
 
-<script>console.log("ROADWARRIOR MOBILE BUILD v19");</script>
+<script>console.log("ROADWARRIOR MOBILE BUILD v20");</script>
+
+<script>
+/* ROADWARRIOR MOBILE BUILD v20 - faster restart */
+requestAnimationFrame(()=>{
+  for(const id of ["reset"]){
+    const btn=document.getElementById(id);
+    if(!btn)continue;
+    btn.style.touchAction="manipulation";
+    btn.style.webkitTapHighlightColor="transparent";
+
+    let fastTouch=false;
+    btn.addEventListener("touchstart",e=>{
+      if(fastTouch)return;
+      fastTouch=true;
+      if(e.cancelable)e.preventDefault();
+
+      // Trigger the game's existing restart click immediately.
+      const ev=new MouseEvent("click",{bubbles:true,cancelable:true,view:window});
+      btn.dispatchEvent(ev);
+
+      setTimeout(()=>fastTouch=false,550);
+    },{passive:false});
+  }
+});
+</script>
+
 </body>
 </html>

@@ -1633,10 +1633,11 @@ function startOnlineMatch(cfg){
   document.getElementById("leaderboardPanel").style.display="none";
   weapon="cannon";
   upgrade="armour";
-  player.maxSpeed=2.5;player.maxHealth=100;player.health=100;
-  if(upgrade==="speed")player.maxSpeed*=1.25;
-  if(upgrade==="armour"){player.maxHealth=125;player.health=125;}
-  document.getElementById("loadout").textContent=(weapon==="mg"?"Kulspruta":"Kanon")+" • "+(upgrade==="speed"?"Speed +25%":"Armour 125 HP");
+  player.maxSpeed=2.5;
+  // Online: 200% health for longer matches.
+  player.maxHealth=200;
+  player.health=200;
+  document.getElementById("loadout").textContent="Kanon • 200 HP";
   obstacles=JSON.parse(JSON.stringify(cfg.arena.obstacles||[]));
   waters=JSON.parse(JSON.stringify(cfg.arena.waters||[]));
   packs.length=0;(cfg.arena.hp||[]).forEach(p=>packs.push({x:p.x,y:p.y,active:true}));
@@ -3771,10 +3772,10 @@ requestAnimationFrame(loop);
 })();
 </script>
 
-<script>console.log("ROADWARRIOR MOBILE BUILD v20");</script>
+<script>console.log("ROADWARRIOR MOBILE BUILD v21");</script>
 
 <script>
-/* ROADWARRIOR MOBILE BUILD v20 - faster restart */
+/* ROADWARRIOR MOBILE BUILD v21 - faster restart */
 requestAnimationFrame(()=>{
   for(const id of ["reset"]){
     const btn=document.getElementById(id);

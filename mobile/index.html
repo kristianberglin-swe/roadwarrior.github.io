@@ -1039,7 +1039,7 @@ html,body{
 }
 </style>
 
-<!-- ROADWARRIOR PWA v23 -->
+<!-- ROADWARRIOR PWA v24 -->
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#120b07">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2610,9 +2610,42 @@ class Car{
     this.speed=Math.max(-this.maxSpeed*.6,Math.min(this.maxSpeed,this.speed));
     if(inWater(this.x,this.y))this.speed*=.70;
 
-    const nx=this.x+Math.cos(this.angle)*this.speed;
-    const ny=this.y+Math.sin(this.angle)*this.speed;
-    if(!blocked(nx,ny,this.radius)){this.x=nx;this.y=ny}else this.speed*=-.25;
+    const dx=Math.cos(this.angle)*this.speed;
+    const dy=Math.sin(this.angle)*this.speed;
+
+    // Mobile cars are visually smaller, so use a slightly smaller collision circle.
+    // This also makes narrow gaps between buildings less likely to trap the player.
+    const mobileCollision=(matchMedia('(hover:none) and (pointer:coarse)').matches || innerWidth<950);
+    const moveRadius=mobileCollision?this.radius*.72:this.radius;
+
+    const nx=this.x+dx;
+    const ny=this.y+dy;
+
+    if(!blocked(nx,ny,moveRadius)){
+      this.x=nx;
+      this.y=ny;
+    }else{
+      // Try sliding along the obstacle instead of bouncing backwards.
+      const canX=!blocked(this.x+dx,this.y,moveRadius);
+      const canY=!blocked(this.x,this.y+dy,moveRadius);
+
+      if(canX&&canY){
+        // Choose the dominant movement axis for a natural glancing slide.
+        if(Math.abs(dx)>=Math.abs(dy))this.x+=dx;
+        else this.y+=dy;
+        this.speed*=.84;
+      }else if(canX){
+        this.x+=dx;
+        this.speed*=.84;
+      }else if(canY){
+        this.y+=dy;
+        this.speed*=.84;
+      }else{
+        // No reverse kick: stop gently so the player can steer away immediately.
+        this.speed*=.22;
+        if(Math.abs(this.speed)<.025)this.speed=0;
+      }
+    }
 
     this.turret=Math.atan2(mouse.y-this.y,mouse.x-this.x);
 
@@ -3912,19 +3945,22 @@ requestAnimationFrame(loop);
     simulationTick=function(){
       if(isCoarse() && started && player && !player.dead && drivePointer!==null){
         const power=Math.min(1,Math.hypot(driveX,driveY));
-        if(power>.16){
+        if(power>.14){
           gamepadDriving=true;
 
-          // Smooth turning instead of snapping to the thumb direction.
+          // Progressive steering: quicker at low speed, calmer at high speed.
+          // This makes tight turns easier without making high-speed driving twitchy.
           const targetAngle=Math.atan2(driveY,driveX);
           let delta=((targetAngle-player.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
-          player.angle+=delta*.10;
+          const speedRatio=Math.min(1,Math.abs(player.speed)/(player.maxSpeed*.45||1));
+          const turnEase=.16-speedRatio*.045;
+          player.angle+=delta*turnEase;
 
-          // Larger dead zone + eased throttle + substantially lower mobile top speed.
-          const p=Math.max(0,(power-.16)/.84);
+          // Slightly smaller dead zone and smoother throttle interpolation.
+          const p=Math.max(0,(power-.14)/.86);
           const eased=p*p*(3-2*p);
           const targetSpeed=player.maxSpeed*.45*eased;
-          player.speed+=(targetSpeed-player.speed)*.10;
+          player.speed+=(targetSpeed-player.speed)*.125;
         }else{
           gamepadDriving=true;
           player.speed*=.88;
@@ -4006,10 +4042,10 @@ requestAnimationFrame(loop);
 })();
 </script>
 
-<script>console.log("ROADWARRIOR MOBILE BUILD v23 PWA");</script>
+<script>console.log("ROADWARRIOR MOBILE BUILD v24 PWA");</script>
 
 <script>
-/* ROADWARRIOR MOBILE BUILD v23 PWA - faster restart */
+/* ROADWARRIOR MOBILE BUILD v24 PWA - faster restart */
 requestAnimationFrame(()=>{
   for(const id of ["reset"]){
     const btn=document.getElementById(id);
@@ -4035,10 +4071,10 @@ requestAnimationFrame(()=>{
 
 
 <script>
-/* ROADWARRIOR PWA v23 */
+/* ROADWARRIOR PWA v24 */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => {});
+    navigator.serviceWorker.register("./sw.js", {scope:"./"}).catch(()=>{});
   });
 }
 </script>

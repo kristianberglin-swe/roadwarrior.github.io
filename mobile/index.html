@@ -3032,24 +3032,15 @@ function drawArena(){
     ctx.fillRect(q.x*canvas.width,q.y*canvas.height,q.w*canvas.width,q.h*canvas.height);
     ctx.restore();
 
-    ctx.strokeStyle="rgba(232,214,165,.82)";
-    ctx.lineWidth=4;
-    ctx.stroke();
+    // Softer, more natural shoreline.
+    ctx.save();
+    ctx.lineJoin="round";ctx.lineCap="round";
+    ctx.strokeStyle="rgba(102,72,42,.30)";ctx.lineWidth=10;ctx.stroke();
+    ctx.strokeStyle="rgba(178,139,88,.52)";ctx.lineWidth=6;ctx.stroke();
+    ctx.strokeStyle="rgba(72,72,54,.38)";ctx.lineWidth=2;ctx.stroke();
+    ctx.restore();
 
-    // water highlights
-    ctx.strokeStyle="rgba(240,253,255,.28)";
-    ctx.lineWidth=1.5;
-    for(let k=0;k<5;k++){
-      const yy=(q.y+q.h*(.24+k*.12))*canvas.height;
-      ctx.beginPath();
-      ctx.moveTo((q.x+q.w*.18)*canvas.width,yy);
-      ctx.bezierCurveTo(
-        (q.x+q.w*.38)*canvas.width,yy-3,
-        (q.x+q.w*.62)*canvas.width,yy+3,
-        (q.x+q.w*.82)*canvas.width,yy
-      );
-      ctx.stroke();
-    }
+    // Clean water surface without artificial white stripes.
   }
 
   // top-down mountain / rock formations replacing buildings
@@ -3216,7 +3207,7 @@ function drawBullets(){
         const wobble=Math.sin((b.x+b.y)*.08+k*2.1)*2.2;
         const sx=b.x-ux*(8+k*7)+px*wobble;
         const sy=b.y-uy*(8+k*7)+py*wobble;
-        const rr=3+k*1.15;
+        const rr=2.4+k*.9;
         ctx.globalAlpha=Math.max(.08,.38-k*.055);
         ctx.fillStyle=k<3?"#8d8177":"#625d59";
         ctx.beginPath();ctx.arc(sx,sy,rr,0,Math.PI*2);ctx.fill();
@@ -3232,7 +3223,7 @@ function drawBullets(){
       flame.addColorStop(.78,"#ffb21a");
       flame.addColorStop(1,"#fff5bd");
       ctx.strokeStyle=flame;
-      ctx.lineWidth=6;
+      ctx.lineWidth=4.8;
       ctx.lineCap="round";
       ctx.beginPath();
       ctx.moveTo(b.x-ux*25,b.y-uy*25);
@@ -3242,6 +3233,7 @@ function drawBullets(){
       // Dark RPG/rocket body.
       ctx.translate(b.x,b.y);
       ctx.rotate(ang);
+      ctx.scale(.82,.82);
       ctx.shadowColor="#ff5a00";
       ctx.shadowBlur=10;
 
@@ -4091,7 +4083,7 @@ requestAnimationFrame(loop);
 })();
 </script>
 
-<script>console.log("ROADWARRIOR MOBILE BUILD v25 PWA");</script>
+<script>console.log("ROADWARRIOR MOBILE BUILD v26 PWA");</script>
 
 <script>
 /* ROADWARRIOR MOBILE BUILD v25 PWA - faster restart */
